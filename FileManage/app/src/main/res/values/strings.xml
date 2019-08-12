@@ -1,0 +1,30 @@
+<resources>
+    <string name="app_name">FilesManage</string>
+    <string name="Title">文件管理</string>
+    <string name="Devices">插入设备</string>
+    <string name="Preview">选择要预览的文件</string>
+    <string name="Return">返回上一级</string>
+    <string name="OpenDirectory">打开文件夹</string>
+    <string name="NewDirectory">新建文件夹</string>
+    <string name="More">更多</string>
+    <string name="Path">文件路径></string>
+    <string name="FileName">名称</string>
+    <string name="ModifyTime">修改时间</string>
+    <string name="Type">类型</string>
+    <string name="Size">大小</string>
+    <string name="FileRenameInput">请输入新文件名</string>
+    <string name="FileRenameLenError">文件名长度必须为1-255!</string>
+    <string name="FileRenameFormatError">文件名格式错误!</string>
+    <string name="Confirm">确定</string>
+    <string name="Cancel">取消</string>
+    <string name="Rename">重命名</string>
+    <string name="Copy">复制</string>
+    <string name="Move">移动</string>
+    <string name="Delete">删除</string>
+    <string name="DirectoryNameLenError">文件夹名长度必须为1-255!</string>
+    <string name="DirectoryNameFormatError">文件夹名格式错误!</string>
+    <string name="ReturnURoot">返回到U盘根目录</string>
+    <string name="ReturnFRoot">返回到fdisk根目录</string>
+    <string name="EnterDirectory">进入目录</string>
+    <string name="RootDirectory">当前已经是根目录</string>
+</resources>
