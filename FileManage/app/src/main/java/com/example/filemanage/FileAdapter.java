@@ -5,19 +5,12 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Color;
-import android.graphics.Path;
 import android.graphics.Point;
 import android.os.AsyncTask;
-import android.os.Bundle;
 import android.os.Environment;
-import android.os.Handler;
-import android.os.Message;
-import android.os.Parcel;
-import android.support.design.animation.Positioning;
 import android.support.v7.app.AlertDialog;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Size;
 import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -47,7 +40,7 @@ public class FileAdapter extends BaseAdapter {
     public UserViewModel mUserData  = null;
     public List<File> mFileList = new ArrayList<File>();
     private String mDestDirectory = null;
-
+    private int Itemheight;
     //路径选择器监听器
     private class PathSelectClick implements View.OnClickListener{
 
@@ -85,11 +78,18 @@ public class FileAdapter extends BaseAdapter {
                     mDirAdapter.refresh();
                     break;
                 case R.id.EnterDirectory://进入目录
-                    String path = mDirAdapter.mList.get(mUserData.DirCurrentItem).getAbsolutePath();
-                    mUserData.DirDirectoryList.add(path);
-                    mDirAdapter.setCurrentItem(0);
-                    mPath.setText(path);
-                    mDirAdapter.refresh();
+                    if(mDirAdapter.mList.get(mUserData.DirCurrentItem).isDirectory())
+                    {
+                        String path = mDirAdapter.mList.get(mUserData.DirCurrentItem).getAbsolutePath();
+                        mUserData.DirDirectoryList.add(path);
+                        mDirAdapter.setCurrentItem(0);
+                        mPath.setText(path);
+                        mDirAdapter.refresh();
+                    }
+                    else
+                    {
+                        Toast.makeText(mContent, R.string.NoEnterDocument, Toast.LENGTH_LONG).show();
+                    }
                     break;
                 default:
             }
@@ -129,7 +129,7 @@ public class FileAdapter extends BaseAdapter {
     //文件操作同步栈
     private class FilesTask extends AsyncTask<File, String, String> {
 
-        private String mTitle[] = {"移动文件夹", "复制文件夹", "删除","移动文件","复制文件","重命名文件夹","重命名文件"};
+        private String mTitle[] = {mContent.getString(R.string.MoveDirectory), mContent.getString(R.string.CopyDirectory), mContent.getString(R.string.Delete),mContent.getString(R.string.MoveFile),mContent.getString(R.string.CopyFile),mContent.getString(R.string.RenameDirectory),mContent.getString(R.string.RenameFile)};
         private FileCtrlType mType;
         private final ProgressDialog Progress = new ProgressDialog(mContent);
         private String DestDirectory = null;
@@ -146,7 +146,7 @@ public class FileAdapter extends BaseAdapter {
             //设置ProgressDialog 是否可以按返回键取消；
             Progress.setCancelable(true);
             Progress.setCanceledOnTouchOutside(false);// 设置在点击Dialog外是否取消Dialog进度条
-            Progress.setButton(DialogInterface.BUTTON_NEGATIVE, "取消", new DialogInterface.OnClickListener() {
+            Progress.setButton(DialogInterface.BUTTON_NEGATIVE, mContent.getString(R.string.Cancel), new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface d, int i) {
                     onCancelled();
                 }
@@ -301,9 +301,9 @@ public class FileAdapter extends BaseAdapter {
                 case R.id.FileDelete: {
                     AlertDialog.Builder bulider = new AlertDialog.Builder(mContent);
                     //bulider.setIcon(R.drawable.ic_launcher);//在title的左边显示一个图片
-                    bulider.setTitle("删除");
-                    bulider.setMessage("你确定要删除吗?");
-                    bulider.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                    bulider.setTitle(R.string.Delete);
+                    bulider.setMessage(R.string.RequestDelete);
+                    bulider.setPositiveButton(R.string.Confirm, new DialogInterface.OnClickListener() {
 
                         @Override
                         public void onClick(DialogInterface dialog, int arg1) {
@@ -313,7 +313,7 @@ public class FileAdapter extends BaseAdapter {
                             DeleteTask.execute(mFileList.get(mPos));
                         }
                     });
-                    bulider.setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                    bulider.setNegativeButton(R.string.Cancel, new DialogInterface.OnClickListener() {
 
                         @Override
                         public void onClick(DialogInterface dialog, int arg1) {
@@ -327,8 +327,8 @@ public class FileAdapter extends BaseAdapter {
                 case R.id.FileRename: {
                     final AlertDialog.Builder bulider = new AlertDialog.Builder(mContent);
                     //bulider.setIcon(R.drawable.ic_launcher);//在title的左边显示一个图片
-                    bulider.setTitle("重命名");
-                    bulider.setMessage("请输入新文件名?");
+                    bulider.setTitle(R.string.Rename);
+                    bulider.setMessage(R.string.InputNewFileName);
                     final View InputView = LayoutInflater.from(mContent).inflate(R.layout.filerenamedialog,null);
                     bulider.setView(InputView);
                     final EditText NameInput = (EditText) InputView.findViewById(R.id.RenameInput);
@@ -370,7 +370,10 @@ public class FileAdapter extends BaseAdapter {
                         @Override
                         public void onClick(View v) {
                             //执行Rename
-                            mDestDirectory = mFileList.get(mPos).getAbsolutePath().replace(mFileList.get(mPos).getName(),NameInput.getText().toString().trim());
+                            StringBuffer str = new StringBuffer(mFileList.get(mPos).getAbsolutePath().toString());
+                            str.replace(str.length()-mFileList.get(mPos).getName().length()-1,str.length(),File.separator+NameInput.getText().toString().trim());
+                            mDestDirectory = str.toString();
+                            //mDestDirectory = mFileList.get(mPos).getAbsolutePath().replace(mFileList.get(mPos).getName(),);
                             if(mFileList.get(mPos).isDirectory())
                             {
                                 //删除文件或目录
@@ -404,7 +407,7 @@ public class FileAdapter extends BaseAdapter {
                 {
                     final AlertDialog.Builder bulider = new AlertDialog.Builder(mContent);
                     //bulider.setIcon(R.drawable.ic_launcher);//在title的左边显示一个图片
-                    bulider.setTitle("请选择目标目录");
+                    bulider.setTitle(R.string.MoveToDirectory);
                     final View InputView = LayoutInflater.from(mContent).inflate(R.layout.directoryselectdialog,null);
                     bulider.setView(InputView);
 
@@ -430,6 +433,8 @@ public class FileAdapter extends BaseAdapter {
                     });
                     final TextView path = (TextView)(InputView.findViewById(R.id.Path));
                     path.setText(Environment.getRootDirectory().getAbsolutePath());
+                    mUserData.DirDirectoryList.clear();
+                    mUserData.DirDirectoryList.add(Environment.getRootDirectory().getAbsolutePath());
                     PathSelectClick PathSelect = new PathSelectClick(DirAdapter,path);
                     InputView.findViewById(R.id.URoot).setOnClickListener(PathSelect);
                     InputView.findViewById(R.id.FRoot).setOnClickListener(PathSelect);
@@ -439,22 +444,29 @@ public class FileAdapter extends BaseAdapter {
                     InputView.findViewById(R.id.Confirm).setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
-                            //执行Move
-                            final String NewName = path.getText().toString().trim();
-                            if(mFileList.get(mPos).isDirectory())
+                            if(mUserData.DirectoryList.get(mUserData.DirectoryList.size() - 1).equals(path.getText().toString()))
                             {
-                                mDestDirectory = NewName+File.separator+mFileList.get(mPos).getName();
-                                //删除文件或目录
-                                FilesTask DeleteTask = new FilesTask(FileCtrlType.MOVEDIRECTORY);
-                                DeleteTask.execute(mFileList.get(mPos));
-
+                                Toast.makeText(mContent, R.string.SameDirectory, Toast.LENGTH_LONG).show();
                             }
-                            else if(mFileList.get(mPos).isFile())
+                            else
                             {
-                                mDestDirectory = NewName+File.separator+mFileList.get(mPos).getName();
-                                //删除文件或目录
-                                FilesTask DeleteTask = new FilesTask(FileCtrlType.MOVEFILE);
-                                DeleteTask.execute(mFileList.get(mPos));
+                                //执行Move
+                                final String NewName = path.getText().toString().trim();
+                                if(mFileList.get(mPos).isDirectory())
+                                {
+                                    mDestDirectory = NewName+File.separator+mFileList.get(mPos).getName();
+                                    //删除文件或目录
+                                    FilesTask DeleteTask = new FilesTask(FileCtrlType.MOVEDIRECTORY);
+                                    DeleteTask.execute(mFileList.get(mPos));
+
+                                }
+                                else if(mFileList.get(mPos).isFile())
+                                {
+                                    mDestDirectory = NewName+File.separator+mFileList.get(mPos).getName();
+                                    //删除文件或目录
+                                    FilesTask DeleteTask = new FilesTask(FileCtrlType.MOVEFILE);
+                                    DeleteTask.execute(mFileList.get(mPos));
+                                }
                             }
                             //关闭对话框
                               Dialog.dismiss();
@@ -476,7 +488,7 @@ public class FileAdapter extends BaseAdapter {
                 {
                     final AlertDialog.Builder bulider = new AlertDialog.Builder(mContent);
                     //bulider.setIcon(R.drawable.ic_launcher);//在title的左边显示一个图片
-                    bulider.setTitle("拷贝");
+                    bulider.setTitle(R.string.CopyToDirectory);
                     final View InputView = LayoutInflater.from(mContent).inflate(R.layout.directoryselectdialog,null);
                     bulider.setView(InputView);
 
@@ -502,6 +514,8 @@ public class FileAdapter extends BaseAdapter {
                     });
                     final TextView path = (TextView)(InputView.findViewById(R.id.Path));
                     path.setText(Environment.getRootDirectory().getAbsolutePath());
+                    mUserData.DirDirectoryList.clear();
+                    mUserData.DirDirectoryList.add(Environment.getRootDirectory().getAbsolutePath());
                     PathSelectClick PathSelect = new PathSelectClick(DirAdapter,path);
                     InputView.findViewById(R.id.URoot).setOnClickListener(PathSelect);
                     InputView.findViewById(R.id.FRoot).setOnClickListener(PathSelect);
@@ -512,23 +526,29 @@ public class FileAdapter extends BaseAdapter {
                     InputView.findViewById(R.id.Confirm).setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
-                            //执行Move
-                            final String NewName = path.getText().toString().trim();
-                            if(mFileList.get(mPos).isDirectory())
+                            if(mUserData.DirectoryList.get(mUserData.DirectoryList.size() - 1).equals(path.getText().toString()))
                             {
-                                mDestDirectory = NewName+File.separator+mFileList.get(mPos).getName();
-                                //删除文件或目录
-                                FilesTask DeleteTask = new FilesTask(FileCtrlType.COPYDIRECTORY);
-                                DeleteTask.execute(mFileList.get(mPos));
+                                Toast.makeText(mContent, R.string.SameDirectory, Toast.LENGTH_LONG).show();
                             }
-                            else if(mFileList.get(mPos).isFile())
+                            else
                             {
-                                mDestDirectory = NewName+File.separator+mFileList.get(mPos).getName();
-                                //删除文件或目录
-                                FilesTask DeleteTask = new FilesTask(FileCtrlType.COPYFILE);
-                                DeleteTask.execute(mFileList.get(mPos));
+                                //执行Copy
+                                final String NewName = path.getText().toString().trim();
+                                if(mFileList.get(mPos).isDirectory())
+                                {
+                                    mDestDirectory = NewName+File.separator+mFileList.get(mPos).getName();
+                                    //删除文件或目录
+                                    FilesTask DeleteTask = new FilesTask(FileCtrlType.COPYDIRECTORY);
+                                    DeleteTask.execute(mFileList.get(mPos));
+                                }
+                                else if(mFileList.get(mPos).isFile())
+                                {
+                                    mDestDirectory = NewName+File.separator+mFileList.get(mPos).getName();
+                                    //删除文件或目录
+                                    FilesTask DeleteTask = new FilesTask(FileCtrlType.COPYFILE);
+                                    DeleteTask.execute(mFileList.get(mPos));
+                                }
                             }
-
                             //mUserData.StateSet.remove(mFileList.get(mPos).getName());
                             //refresh();
                             //关闭对话框
@@ -559,7 +579,7 @@ public class FileAdapter extends BaseAdapter {
         {
             mConvertView = convertView;
         }
-        public  void setPos(Integer pos)
+        public void setPos(Integer pos)
         {
             mPos = pos;
         }
@@ -646,12 +666,12 @@ public class FileAdapter extends BaseAdapter {
         File file = mFileList.get(position);
         if(file.isDirectory()) {
             Holder.FileTypeIcon.setImageResource(R.mipmap.file);
-            Holder.FileType.setText("文件夹");
+            Holder.FileType.setText(R.string.Directory);
         }
         else
         {
             Holder.FileTypeIcon.setImageResource(R.mipmap.image);
-            Holder.FileType.setText("文件");
+            Holder.FileType.setText(R.string.File);
         }
         //文件名字
         Holder.FileName.setText(file.getName());

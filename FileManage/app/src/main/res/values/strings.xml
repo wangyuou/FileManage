@@ -12,7 +12,7 @@
     <string name="ModifyTime">修改时间</string>
     <string name="Type">类型</string>
     <string name="Size">大小</string>
-    <string name="FileRenameInput">请输入新文件名</string>
+    <string name="FileRenameInput">请输入新文件夹名</string>
     <string name="FileRenameLenError">文件名长度必须为1-255!</string>
     <string name="FileRenameFormatError">文件名格式错误!</string>
     <string name="Confirm">确定</string>
@@ -26,5 +26,25 @@
     <string name="ReturnURoot">返回到U盘根目录</string>
     <string name="ReturnFRoot">返回到fdisk根目录</string>
     <string name="EnterDirectory">进入目录</string>
-    <string name="RootDirectory">当前已经是根目录</string>
+    <string name="NoEnterDocument">不能进入文件</string>
+    <string name="ChooseFileOrDirectory">请选择要操作的目录或文件!</string>
+    <string name="RequestDelete">你确定要删除吗?</string>
+    <string name="SameDirectory">选择路径和当前路径一致!</string>
+    <string name="Hint">提示</string>
+    <string name="EntitleFile">请输入新建文件夹名?</string>
+    <string name="CreatFileFail">创建文件夹失败!</string>
+    <string name="RootDirectory">当前已经是根目录!</string>
+    <string name="OnlyOneDirectory">只能选择一个进入的目录!</string>
+    <string name="DontIsDirectory">当前选择的不是文件夹!</string>
+    <string name="MoveDirectory">移动文件夹</string>
+    <string name="CopyDirectory">复制文件夹</string>
+    <string name="MoveFile">移动文件</string>
+    <string name="CopyFile">复制文件</string>
+    <string name="RenameDirectory">重命名文件夹</string>
+    <string name="RenameFile">重命名文件</string>
+    <string name="InputNewFileName">请输入新文件名?</string>
+    <string name="Directory">文件夹</string>
+    <string name="File">文件</string>
+    <string name="MoveToDirectory">移动到目标目录</string>
+    <string name="CopyToDirectory">复制到目标目录</string>
 </resources>

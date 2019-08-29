@@ -5,14 +5,10 @@ import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.graphics.Color;
 import android.graphics.Point;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.Handler;
-import android.os.Message;
-import android.service.autofill.UserData;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
@@ -21,23 +17,21 @@ import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.PopupWindow;
-import android.widget.ProgressBar;
-import android.widget.SimpleAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ToggleButton;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static java.lang.Thread.currentThread;
 
 public class MainActivity extends AppCompatActivity {
     private List<Map<String, Object>> listitem = new ArrayList<Map<String, Object>>();
@@ -84,11 +78,22 @@ public class MainActivity extends AppCompatActivity {
                     mDirAdapter.refresh();
                     break;
                 case R.id.EnterDirectory://进入目录
-                    String path = mDirAdapter.mList.get(userData.DirCurrentItem).getAbsolutePath();
-                    userData.DirDirectoryList.add(path);
-                    mDirAdapter.setCurrentItem(0);
-                    mPath.setText(path);
-                    mDirAdapter.refresh();
+                    if(userData.DirCurrentItem >= mDirAdapter.mList.size())
+                    {
+                        return ;
+                    }
+                    if(mDirAdapter.mList.get(userData.DirCurrentItem).isDirectory())
+                    {
+                        String path = mDirAdapter.mList.get(userData.DirCurrentItem).getAbsolutePath();
+                        userData.DirDirectoryList.add(path);
+                        mDirAdapter.setCurrentItem(0);
+                        mPath.setText(path);
+                        mDirAdapter.refresh();
+                    }
+                    else
+                    {
+                        Toast.makeText(MainActivity.this, R.string.NoEnterDocument, Toast.LENGTH_LONG).show();
+                    }
                     break;
                 default:
             }
@@ -96,7 +101,7 @@ public class MainActivity extends AppCompatActivity {
     };
     private class FilesTask extends AsyncTask<List<File>, String, Void> {
 
-        private String mTitle[] = {"移动","复制","删除"};
+        private String mTitle[] = {getString(R.string.Move),getString(R.string.Copy),getString(R.string.Delete)};
         private FileCtrlType mType;
         private String DestDirectory = null;
         private final ProgressDialog Progress = new ProgressDialog(MainActivity.this);
@@ -114,7 +119,7 @@ public class MainActivity extends AppCompatActivity {
             //设置ProgressDialog 是否可以按返回键取消；
             Progress.setCancelable(true);
             Progress.setCanceledOnTouchOutside(false);// 设置在点击Dialog外是否取消Dialog进度条
-            Progress.setButton(DialogInterface.BUTTON_NEGATIVE, "取消", new DialogInterface.OnClickListener(){
+            Progress.setButton(DialogInterface.BUTTON_NEGATIVE, getString(R.string.Cancel), new DialogInterface.OnClickListener(){
                 public void onClick(DialogInterface d, int i) {
                     onCancelled();
                 }
@@ -193,7 +198,7 @@ public class MainActivity extends AppCompatActivity {
         public void onClick(View view) {
             if(userData.StateSet.size() == 0)
             {
-                Toast.makeText(MainActivity.this, "请选择要操作的目录或文件!", Toast.LENGTH_LONG).show();
+                Toast.makeText(MainActivity.this, R.string.ChooseFileOrDirectory, Toast.LENGTH_LONG).show();
                 Menu.dismiss();
                 return ;
             }
@@ -204,9 +209,9 @@ public class MainActivity extends AppCompatActivity {
                         AlertDialog.Builder bulider = new AlertDialog.Builder(MainActivity.this);
 
                         //bulider.setIcon(R.drawable.ic_launcher);//在title的左边显示一个图片
-                        bulider.setTitle("删除");
-                        bulider.setMessage("你确定要删除吗?");
-                        bulider.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                        bulider.setTitle(R.string.Delete);
+                        bulider.setMessage(R.string.RequestDelete);
+                        bulider.setPositiveButton(R.string.Confirm, new DialogInterface.OnClickListener() {
 
                             @Override
                             public void onClick(DialogInterface dialog, int arg1) {
@@ -224,7 +229,7 @@ public class MainActivity extends AppCompatActivity {
                                 }
                             }
                         });
-                        bulider.setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                        bulider.setNegativeButton(R.string.Cancel, new DialogInterface.OnClickListener() {
 
                             @Override
                             public void onClick(DialogInterface dialog, int arg1) {
@@ -241,7 +246,7 @@ public class MainActivity extends AppCompatActivity {
                     {
                         final AlertDialog.Builder bulider = new AlertDialog.Builder(MainActivity.this);
                         //bulider.setIcon(R.drawable.ic_launcher);//在title的左边显示一个图片
-                        bulider.setTitle("请选择目标目录");
+                        bulider.setTitle(R.string.CopyToDirectory);
                         final View InputView = LayoutInflater.from(MainActivity.this).inflate(R.layout.directoryselectdialog,null);
                         bulider.setView(InputView);
 
@@ -267,6 +272,8 @@ public class MainActivity extends AppCompatActivity {
                         });
                         final TextView path = (TextView)(InputView.findViewById(R.id.Path));
                         path.setText(Environment.getRootDirectory().getAbsolutePath());
+                        userData.DirDirectoryList.clear();
+                        userData.DirDirectoryList.add(Environment.getRootDirectory().getAbsolutePath());
                         PathSelectClick PathSelect = new PathSelectClick(DirAdapter,path);
                         InputView.findViewById(R.id.URoot).setOnClickListener(PathSelect);
                         InputView.findViewById(R.id.FRoot).setOnClickListener(PathSelect);
@@ -276,16 +283,23 @@ public class MainActivity extends AppCompatActivity {
                         InputView.findViewById(R.id.Confirm).setOnClickListener(new View.OnClickListener() {
                             @Override
                             public void onClick(View v) {
-                                FilesTask CopyTask = new FilesTask(FileCtrlType.COPY);
-                                if(CopyTask != null) {
-                                    CopyTask.setDestDirectory(path.getText().toString());
-                                    //获取选中的目录或文件
-                                    List<File> list = new ArrayList<>();
-                                    String[] Name = userData.StateSet.toArray(new String[0]);
-                                    for (int i = 0; i < Name.length; i++) {
-                                        list.add(new File(userData.DirectoryList.get(userData.DirectoryList.size() - 1) + File.separator + Name[i]));
+                                if(userData.DirectoryList.get(userData.DirectoryList.size() - 1).equals(path.getText().toString()))
+                                {
+                                    Toast.makeText(MainActivity.this, R.string.SameDirectory, Toast.LENGTH_LONG).show();
+                                }
+                                else
+                                {
+                                    FilesTask CopyTask = new FilesTask(FileCtrlType.COPY);
+                                    if (CopyTask != null) {
+                                        CopyTask.setDestDirectory(path.getText().toString());
+                                        //获取选中的目录或文件
+                                        List<File> list = new ArrayList<>();
+                                        String[] Name = userData.StateSet.toArray(new String[0]);
+                                        for (int i = 0; i < Name.length; i++) {
+                                            list.add(new File(userData.DirectoryList.get(userData.DirectoryList.size() - 1) + File.separator + Name[i]));
+                                        }
+                                        CopyTask.execute(list);
                                     }
-                                    CopyTask.execute(list);
                                 }
                                 //关闭对话框
                                 Dialog.dismiss();
@@ -307,7 +321,7 @@ public class MainActivity extends AppCompatActivity {
                     {
                         final AlertDialog.Builder bulider = new AlertDialog.Builder(MainActivity.this);
                         //bulider.setIcon(R.drawable.ic_launcher);//在title的左边显示一个图片
-                        bulider.setTitle("请选择目标目录");
+                        bulider.setTitle(R.string.MoveToDirectory);
                         final View InputView = LayoutInflater.from(MainActivity.this).inflate(R.layout.directoryselectdialog,null);
                         bulider.setView(InputView);
 
@@ -333,6 +347,8 @@ public class MainActivity extends AppCompatActivity {
                         });
                         final TextView path = (TextView)(InputView.findViewById(R.id.Path));
                         path.setText(Environment.getRootDirectory().getAbsolutePath());
+                        userData.DirDirectoryList.clear();
+                        userData.DirDirectoryList.add(Environment.getRootDirectory().getAbsolutePath());
                         PathSelectClick PathSelect = new PathSelectClick(DirAdapter,path);
                         InputView.findViewById(R.id.URoot).setOnClickListener(PathSelect);
                         InputView.findViewById(R.id.FRoot).setOnClickListener(PathSelect);
@@ -342,16 +358,23 @@ public class MainActivity extends AppCompatActivity {
                         InputView.findViewById(R.id.Confirm).setOnClickListener(new View.OnClickListener() {
                             @Override
                             public void onClick(View v) {
-                                FilesTask CopyTask = new FilesTask(FileCtrlType.MOVE);
-                                if(CopyTask != null) {
-                                    CopyTask.setDestDirectory(path.getText().toString());
-                                    //获取选中的目录或文件
-                                    List<File> list = new ArrayList<>();
-                                    String[] Name = userData.StateSet.toArray(new String[0]);
-                                    for (int i = 0; i < Name.length; i++) {
-                                        list.add(new File(userData.DirectoryList.get(userData.DirectoryList.size() - 1) + File.separator + Name[i]));
+                                if(userData.DirectoryList.get(userData.DirectoryList.size() - 1).equals(path.getText().toString()))
+                                {
+                                    Toast.makeText(MainActivity.this, R.string.SameDirectory, Toast.LENGTH_LONG).show();
+                                }
+                                else
+                                {
+                                    FilesTask CopyTask = new FilesTask(FileCtrlType.MOVE);
+                                    if (CopyTask != null) {
+                                        CopyTask.setDestDirectory(path.getText().toString());
+                                        //获取选中的目录或文件
+                                        List<File> list = new ArrayList<>();
+                                        String[] Name = userData.StateSet.toArray(new String[0]);
+                                        for (int i = 0; i < Name.length; i++) {
+                                            list.add(new File(userData.DirectoryList.get(userData.DirectoryList.size() - 1) + File.separator + Name[i]));
+                                        }
+                                        CopyTask.execute(list);
                                     }
-                                    CopyTask.execute(list);
                                 }
                                 //关闭对话框
                                 Dialog.dismiss();
@@ -372,7 +395,7 @@ public class MainActivity extends AppCompatActivity {
                      default:
 
             }
-
+            //关闭Menu
             Menu.dismiss();
         }
     };
@@ -388,24 +411,25 @@ public class MainActivity extends AppCompatActivity {
                     userData.AllSelect = !userData.AllSelect;
                     if(userData.AllSelect)
                     {
-                        System.out.println("check!!");
                         //选中全部item
                         userData.StateSet.clear();
                         userData.StateSet.addAll(mFileAdapter.getALLItem());
                         mFileAdapter.refresh();
-                        System.out.println(userData.StateSet);
                     }
                     else
                     {
                         userData.StateSet.clear();
                         mFileAdapter.refresh();
                     }
+                    View ListHead = (View) findViewById(R.id.ListHead);
+                    ToggleButton All = (ToggleButton)ListHead.findViewById(R.id.AllButton);
+                    All.setChecked(userData.AllSelect);
                     break;
                 case R.id.New://新建文件夹
                     final AlertDialog.Builder bulider = new AlertDialog.Builder(MainActivity.this);
                     //bulider.setIcon(R.drawable.ic_launcher);//在title的左边显示一个图片
-                    bulider.setTitle("提示");
-                    bulider.setMessage("请输入新建文件夹名？");
+                    bulider.setTitle(R.string.Hint);
+                    bulider.setMessage(R.string.EntitleFile);
                     final View InputView = LayoutInflater.from(MainActivity.this).inflate(R.layout.filerenamedialog,null);
                     bulider.setView(InputView);
                     final EditText NameInput = (EditText) InputView.findViewById(R.id.RenameInput);
@@ -446,12 +470,10 @@ public class MainActivity extends AppCompatActivity {
                     InputView.findViewById(R.id.Confirm).setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
-                            System.out.println(NameInput.getText());
                             File file = new File(userData.DirectoryList.get(userData.DirectoryList.size()-1)+File.separator+NameInput.getText());
-                            System.out.println(file.toString());
                             if(!file.mkdirs())
                             {
-                                Toast.makeText(MainActivity.this,"创建文件夹失败!",Toast.LENGTH_LONG).show();
+                                Toast.makeText(MainActivity.this,R.string.CreatFileFail,Toast.LENGTH_LONG).show();
                             }
                             mFileAdapter.refresh();
                             //关闭对话框
@@ -471,7 +493,7 @@ public class MainActivity extends AppCompatActivity {
                 case R.id.Return:
                         if(userData.DirectoryList.size() == 1)
                         {
-                            Toast.makeText(MainActivity.this,"当前已经是根目录!",Toast.LENGTH_LONG).show();
+                            Toast.makeText(MainActivity.this,R.string.RootDirectory,Toast.LENGTH_LONG).show();
                         }
                         else
                         {
@@ -486,17 +508,15 @@ public class MainActivity extends AppCompatActivity {
                         //获取当前选择的目录
                         if(userData.StateSet.size() == 0)
                         {
-                            Toast.makeText(MainActivity.this,"请选择要进入的目录!",Toast.LENGTH_LONG).show();
+                            Toast.makeText(MainActivity.this,R.string.ChooseFileOrDirectory,Toast.LENGTH_LONG).show();
                         }
                         else if(userData.StateSet.size() > 1)
                         {
-                            Toast.makeText(MainActivity.this,"只能选择一个进入的目录!",Toast.LENGTH_LONG).show();
+                            Toast.makeText(MainActivity.this,R.string.OnlyOneDirectory,Toast.LENGTH_LONG).show();
                         }
                         else
                         {
                             String[] array = userData.StateSet.toArray(new String[0]);
-                            System.out.println(array[0]);
-                            System.out.println(userData.DirectoryList);
                             if(new File(userData.DirectoryList.get(userData.DirectoryList.size()-1)+File.separator+array[0]).isDirectory()) {
                                 //添加当前路径到目录链表
                                 userData.DirectoryList.add(userData.DirectoryList.get(userData.DirectoryList.size() - 1) + File.separator + array[0]);
@@ -508,7 +528,7 @@ public class MainActivity extends AppCompatActivity {
                             }
                             else
                             {
-                                Toast.makeText(MainActivity.this,"当前选择的不是文件夹!",Toast.LENGTH_LONG).show();
+                                Toast.makeText(MainActivity.this,R.string.DontIsDirectory,Toast.LENGTH_LONG).show();
                             }
                         }
                     break;
@@ -535,6 +555,8 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     };
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -558,9 +580,10 @@ public class MainActivity extends AppCompatActivity {
 
         //getLayoutInflater().inflate(R.layout.listheader,l);
         //View v = (View) getLayoutInflater().inflate(R.layout.listheader,null);
-        View v = (View) LayoutInflater.from(this).inflate(R.layout.listheader,null);
+        final View v = (View) LayoutInflater.from(this).inflate(R.layout.listheader,null);
         v.findViewById(R.id.AllButton).setOnClickListener(ButOnclick);
         FileList.addHeaderView(v);
+        FileList.setDividerHeight(2);
         FileList.setAdapter(mFileAdapter);
         FileList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -573,6 +596,41 @@ public class MainActivity extends AppCompatActivity {
                     userData.StateSet.add(mFileAdapter.mFileList.get(i - 1).getName());
                 }
                 mFileAdapter.refresh();
+            }
+        });
+        FileList.setOnScrollListener(new AbsListView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(AbsListView absListView, int i) {
+
+            }
+
+            @Override
+            public void onScroll(AbsListView absListView, int i, int i1, int i2) {
+                View ListHead = (View) findViewById(R.id.ListHead);
+                ToggleButton All = (ToggleButton)ListHead.findViewById(R.id.AllButton);
+                //ListHead.setMinimumHeight(mFileAdapter.getItemHeight());
+                ListHead.setVisibility(i>=1?View.VISIBLE:View.GONE);
+                All.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        userData.AllSelect = !userData.AllSelect;
+
+                        if(userData.AllSelect)
+                        {
+                            //选中全部item
+                            userData.StateSet.clear();
+                            userData.StateSet.addAll(mFileAdapter.getALLItem());
+                            mFileAdapter.refresh();
+                        }
+                        else
+                        {
+                            userData.StateSet.clear();
+                            mFileAdapter.refresh();
+                        }
+                        ToggleButton Toggle= (ToggleButton)v.findViewById(R.id.AllButton);
+                        Toggle.setChecked(userData.AllSelect);
+                    }
+                });
             }
         });
         //新建文件夹
@@ -632,6 +690,5 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
-
     }
 }

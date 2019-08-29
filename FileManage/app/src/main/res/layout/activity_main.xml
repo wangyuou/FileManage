@@ -64,6 +64,7 @@
                     android:layout_height="match_parent"
                     android:layout_weight="1"/>
                 <ImageView
+                    android:id="@+id/test"
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:src="@mipmap/udisk" />
@@ -170,7 +171,7 @@
                     android:layout_marginTop="10dp"
                     android:layout_marginBottom="10dp"
                     />
-            <!--文件路劲-->
+                <!--文件路劲-->
             </LinearLayout>
             <View
                 android:layout_width="match_parent"
@@ -200,14 +201,25 @@
                 android:layout_height="1dp"
                 android:background="#96989d"
                 />
-
-            <ListView
-                android:id="@+id/FileList"
+            <RelativeLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:headerDividersEnabled="true"
-                >
-            </ListView>
+                android:layout_height="match_parent">
+                <ListView
+                    android:id="@+id/FileList"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:headerDividersEnabled="true"
+                    >
+                </ListView>
+                <include
+                    android:id="@+id/ListHead"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    layout="@layout/listheader"
+                    android:visibility="gone"
+                    >
+                </include>
+            </RelativeLayout>
         </LinearLayout>
     </LinearLayout>
 
